@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOLFLIX | Harry Potter: The Sorting Hat</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hp: {
+                            gold: '#d4af37',
+                            darkGold: '#b8860b',
+                            red: '#740001',
+                            darkRed: '#5c0000',
+                            blue: '#002555',
+                            green: '#1a472a',
+                            yellow: '#ffdb00',
+                            surface: '#111111',
+                            text: '#f3f4f6'
+                        }
+                    },
+                    fontFamily: {
+                        magic: ['"Cinzel"', 'serif'],
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* FIXED VIEWPORT - STRICTLY NO BODY SCROLLING */
+        body {
+            background-color: #111111;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Dynamic Background System */
+        #dynamic-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://m.media-amazon.com/images/M/MV5BNTU1MzgyMDMtMzBlZS00YzczLThmYWEtMjU3YmFlOWEyMjE1XkEyXkFqcGc@._V1_.jpg'); 
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            opacity: 0.2; z-index: 0; transition: all 1.5s ease-in-out;
+            pointer-events: none; filter: contrast(1.2) brightness(0.8) sepia(0.3);
+        }
+        #bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, #111111 100%),
+                        linear-gradient(to top, #111111 0%, rgba(17,17,17,0.8) 50%, #111111 100%);
+            z-index: 1; pointer-events: none; transition: background 1.5s ease-in-out;
+        }
+
+        /* THEME 2: MAGICAL / SORTING HAT MODE */
+        body.theme-magic #dynamic-bg {
+            background-image: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80'); 
+            opacity: 0.4; filter: contrast(1.3) brightness(0.9) hue-rotate(240deg);
+        }
+        body.theme-magic #bg-overlay {
+            background: radial-gradient(circle at center, transparent 0%, #05051a 100%),
+                        linear-gradient(to top, #05051a 0%, rgba(5,5,26,0.8) 50%, #05051a 100%);
+        }
+
+        /* Fixed Step Management */
+        main { flex: 1; position: relative; width: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .step-container {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; opacity: 0;
+            flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 10;
+        }
+        .step-container.active { display: flex; opacity: 1; animation: focusIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes focusIn { from { opacity: 0; transform: scale(0.95); filter: blur(5px); } to { opacity: 1; transform: scale(1); filter: blur(0); } }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(20, 10, 10, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(212, 175, 55, 0.1);
+            max-width: 1000px; width: 100%; max-height: 82vh; overflow-y: auto; padding: 3rem; position: relative;
+            transition: all 1s ease;
+        }
+        body.theme-magic .glass-panel {
+            background: rgba(10, 10, 30, 0.85); border-color: rgba(100, 150, 255, 0.3);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(100, 150, 255, 0.2);
+        }
+        
+        .glass-panel::-webkit-scrollbar { width: 6px; }
+        .glass-panel::-webkit-scrollbar-track { background: transparent; }
+        .glass-panel::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.5); border-radius: 10px; }
+
+        .magic-title { font-family: 'Cinzel', serif; letter-spacing: 2px; }
+        .hp-gradient { background: linear-gradient(90deg, #d4af37, #b8860b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+        /* Match Game */
+        .match-btn {
+            width: 100%; padding: 1rem; text-align: left; border: 2px solid #333; 
+            border-radius: 8px; background: rgba(0,0,0,0.5); cursor: pointer; transition: all 0.2s;
+            font-family: 'Inter', sans-serif; font-weight: 700; color: #f3f4f6; font-size: 1.1rem;
+        }
+        .match-btn:hover:not(.matched) { border-color: #d4af37; background: rgba(212,175,55,0.1); }
+        .match-btn.selected { border-color: #d4af37; background: rgba(212,175,55,0.2); box-shadow: 0 0 15px rgba(212,175,55,0.4); transform: scale(1.02); }
+        .match-btn.matched { border-color: #2b9348; background: rgba(43, 147, 72, 0.1); color: #2b9348; pointer-events: none; }
+        @keyframes shakeError { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); border-color: red; } 50% { transform: translateX(5px); border-color: red; } 75% { transform: translateX(-5px); border-color: red; } }
+        .error-shake { animation: shakeError 0.4s ease; }
+
+        /* Speaking Hub & Follow up */
+        .speaking-hub { position: relative; background: rgba(0, 0, 0, 0.6); border-left: 4px solid #d4af37; border-radius: 0 12px 12px 0; padding: 2rem; margin-top: 1.5rem; box-shadow: inset 0 0 20px rgba(212,175,55,0.05); }
+        .follow-up-box { background: rgba(212,175,55,0.1); border-left: 4px solid #d4af37; padding: 1rem; border-radius: 0 8px 8px 0; margin-top: 1rem; text-align: left; animation: fadeInNoir 0.5s; }
+
+        /* Sentence Builder */
+        .sb-word { background: #d4af37; color: #111; font-weight: 800; padding: 10px 20px; border-radius: 6px; cursor: pointer; user-select: none; transition: all 0.2s; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .sb-word:hover { transform: translateY(-3px); filter: brightness(1.1); }
+        .sb-dropzone { min-height: 80px; border: 2px dashed rgba(212,175,55,0.5); border-radius: 8px; padding: 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; transition: all 0.3s; background: rgba(0,0,0,0.4); }
+        .sb-dropzone.correct { border-color: #2b9348; background: rgba(43, 147, 72, 0.15); }
+        .sb-dropzone.incorrect { border-color: #e60000; background: rgba(230, 0, 0, 0.15); animation: shakeError 0.4s; }
+
+        /* Buttons */
+        .btn-magic {
+            background-color: #740001; color: #FFF; font-family: 'Cinzel', serif; font-weight: 800;
+            padding: 14px 32px; border-radius: 6px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem; border: 1px solid #d4af37; cursor: pointer;
+        }
+        .btn-magic:hover { background-color: #8b0000; transform: scale(1.02); box-shadow: 0 0 20px rgba(212,175,55,0.4); }
+
+        /* Script Analysis */
+        .script-line { background: rgba(0, 0, 0, 0.5); padding: 16px; border-radius: 8px; font-weight: 500; transition: all 0.3s; cursor: pointer; border: 1px solid transparent; margin-bottom: 10px; }
+        .script-line:hover { background: rgba(212,175,55,0.1); border-color: #d4af37; transform: translateX(5px); }
+        .vocab-trigger { color: #d4af37; border-bottom: 2px dashed #d4af37; transition: all 0.3s; padding: 0 4px; }
+        .vocab-trigger:hover { color: #fff; background: rgba(212,175,55,0.2); border-bottom-style: solid; }
+
+        /* --- THE SORTING HAT TRANSITION --- */
+        #hat-overlay {
+            position: fixed; inset: 0; background: #000; z-index: 9999; display: none; opacity: 1; pointer-events: none;
+        }
+        #hat-magic {
+            position: absolute; inset: 0; opacity: 0.5; background-image: radial-gradient(circle at center, #d4af37 0%, transparent 60%); filter: blur(50px);
+        }
+        .hat-active { display: block !important; animation: hatAnim 3s forwards; }
+        @keyframes hatAnim { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* Quiz Options */
+        .quiz-opt { background: rgba(0,0,0,0.6); border: 2px solid #555; padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 1.2rem; font-weight: bold; }
+        .quiz-opt:hover { border-color: #d4af37; background: rgba(212,175,55,0.2); transform: scale(1.02); }
+
+        /* Praise Pop-up Animation */
+        @keyframes popUpPraise { 
+            0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; } 
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; filter: drop-shadow(0 0 20px #d4af37); } 
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; filter: drop-shadow(0 0 10px #d4af37); } 
+        }
+        .praise-anim { animation: popUpPraise 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* Interactive Cards (Hides Answers) */
+        .interactive-card { cursor: pointer; transition: all 0.3s ease; }
+        .interactive-card:hover { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212,175,55,0.1); transform: translateY(-2px); }
+        .reveal-content { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.5s ease; margin-top: 0; padding-top: 0; border-top-color: transparent; }
+        .interactive-card.open .reveal-content { max-height: 300px; opacity: 1; margin-top: 1rem; padding-top: 1rem; border-top-color: #374151; }
+
+        /* Slide-out Panel (Whiteboard/Dict) */
+        #dict-panel.open, #whiteboard-panel.open { right: 0 !important; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 40; display: none; opacity: 0; transition: opacity 0.4s; backdrop-filter: blur(3px); }
+        .overlay.active { display: block; opacity: 1; }
+    </style>
+</head>
+<body class="text-lg md:text-xl">
+
+    <div id="dynamic-bg"></div>
+    <div id="bg-overlay"></div>
+
+    <!-- HAT TRANSITION LAYER -->
+    <div id="hat-overlay">
+        <div id="hat-magic"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-[#d4af37] font-magic">
+            <span class="text-7xl mb-4 font-black">Hmm...</span>
+            <span class="text-3xl mt-2 tracking-widest text-center px-4">"Difficult. Very difficult...<br>Let's see what is in your head."</span>
+        </div>
+    </div>
+
+    <!-- GIANT PRAISE POPUP -->
+    <div id="praise-popup" class="fixed top-1/2 left-1/2 hidden text-hp-gold font-black text-3xl md:text-5xl text-center z-[10000] uppercase tracking-widest w-full pointer-events-none transform -translate-x-1/2 -translate-y-1/2 font-magic">
+        <span id="praise-text" class="bg-black/95 px-8 py-4 border-2 border-hp-gold rounded-xl inline-block shadow-2xl backdrop-blur-md"></span>
+    </div>
+
+    <!-- HEADER -->
+    <header class="h-20 md:h-24 flex items-center justify-between px-6 md:px-8 shrink-0 relative z-20 bg-black/50 border-b border-white/5 backdrop-blur-md">
+        <div class="flex items-center gap-4">
+            <span class="magic-title text-2xl md:text-3xl text-hp-gold font-bold drop-shadow-md">WOLFLIX</span>
+            <span class="px-2 py-1 border border-hp-gold/50 rounded text-xs tracking-widest text-hp-gold uppercase hidden md:block font-bold bg-hp-gold/10">A2</span>
+        </div>
+        
+        <div class="flex items-center gap-4 md:gap-6">
+            <!-- Praise System Buttons -->
+            <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded px-3 py-1 shadow-inner hidden lg:flex">
+                <span class="text-[10px] text-gray-400 font-bold mr-1 uppercase tracking-widest font-magic">Praise:</span>
+                <button onclick="triggerPraise('10 POINTS! 🦁', '🦁')" class="text-lg hover:scale-125 transition-transform" title="10 Points">🦁</button>
+                <button onclick="triggerPraise('BRILLIANT! ✨', '✨')" class="text-lg hover:scale-125 transition-transform" title="Brilliant">✨</button>
+                <button onclick="triggerPraise('PURE MAGIC! 🪄', '🪄')" class="text-lg hover:scale-125 transition-transform" title="Magic">🪄</button>
+            </div>
+            
+            <button onclick="toggleFullscreen()" class="text-[10px] md:text-xs uppercase tracking-widest text-gray-400 hover:text-white hidden sm:block font-bold transition-colors">
+                [ Fullscreen ]
+            </button>
+            
+            <!-- Notes Button -->
+            <button onclick="toggleWhiteboard()" class="btn-magic px-4 py-2 text-[10px] md:text-xs uppercase tracking-widest shadow-md flex items-center gap-2 m-0 border-none">
+                <i data-lucide="pen-tool" class="w-4 h-4"></i> <span class="hidden md:inline">Notes</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN LESSON AREA -->
+    <main id="lesson-container">
+
+        <!-- STEP 1: Cover -->
+        <section class="step-container active flex-col">
+            <div class="glass-panel text-center flex flex-col items-center">
+                <!-- Cover Formatada Paisagem -->
+                <div class="w-full max-w-[400px] md:max-w-[600px] aspect-video p-1 mb-6 shadow-[0_0_40px_rgba(212,175,55,0.3)] border border-hp-gold/50 bg-black overflow-hidden rounded-lg">
+                    <img src="https://m.media-amazon.com/images/M/MV5BNTU1MzgyMDMtMzBlZS00YzczLThmYWEtMjU3YmFlOWEyMjE1XkEyXkFqcGc@._V1_.jpg" alt="Harry Potter Cover" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity duration-500">
+                </div>
+                <span class="text-xs font-bold tracking-[0.2em] uppercase text-hp-gold mb-2 border border-hp-gold px-4 py-1 rounded bg-black/50">Masterclass</span>
+                <h1 class="magic-title text-5xl md:text-7xl font-black mb-2 text-white uppercase drop-shadow-lg">Harry Potter</h1>
+                <h2 class="text-xl md:text-3xl font-bold text-gray-300 mb-8 uppercase tracking-widest font-magic">The Sorting Hat</h2>
+                <button onclick="nextStep()" class="btn-magic">Enter Hogwarts</button>
+            </div>
+        </section>
+
+        <!-- STEP 2: Briefing -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Directive 01</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">Teacher Briefing</h1>
+                
+                <div class="bg-black/40 p-8 rounded-lg border-l-4 border-hp-red shadow-lg text-lg text-gray-200 mb-8">
+                    <p class="mb-4 font-bold text-xl text-white">This is an A2 (Pre-Intermediate) Masterclass.</p>
+                    <p class="mb-4">Welcome to Hogwarts! Today we analyze one of the most famous scenes in cinema: The Sorting Hat ceremony.</p>
+                    <p>Students will learn how to make predictions and promises about the future using <strong class="text-hp-gold">Will / Won't</strong>, while discussing personality traits and choices.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: Warm Up 1 -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Warm Up</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-10 font-black text-white">Magic</h1>
+                
+                <span class="text-7xl mb-8 block drop-shadow-md">✨</span>
+                <p class="text-2xl font-bold mb-8 leading-relaxed text-white">
+                    "If you had a magic wand and could do one spell right now, what would you do?"
+                </p>
+                <div class="speaking-hub text-left mx-auto max-w-2xl">
+                    <p class="font-bold text-hp-gold text-sm mb-2 tracking-widest uppercase">🗣️ Prompt:</p>
+                    <p class="italic text-xl text-gray-300">"If I had magic, I would..."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 4: Warm Up 2 -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Warm Up</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-10 font-black text-white">School Life</h1>
+                
+                <span class="text-7xl mb-8 block drop-shadow-md">🏫</span>
+                <p class="text-2xl font-bold mb-8 leading-relaxed text-white">
+                    "In Hogwarts, students are divided into 4 different 'Houses' (teams) based on their personality. Did your school divide students into groups? Did you like your school?"
+                </p>
+                <div class="speaking-hub text-left mx-auto max-w-2xl border-l-hp-blue">
+                    <p class="font-bold text-hp-blue text-sm mb-2 tracking-widest uppercase">🗣️ Prompt:</p>
+                    <p class="italic text-xl text-gray-300">"In my school, we..."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 5: Synopsis -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">The Plot</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">The Ceremony</h1>
+                
+                <div class="bg-black/50 p-8 rounded-lg text-xl text-gray-300 leading-relaxed border border-gray-800">
+                    <p class="mb-4">Harry Potter is a young boy who discovers he is a wizard. He goes to Hogwarts School of Witchcraft and Wizardry.</p>
+                    <p class="mb-4">On the first day, every student must wear a magical hat called <strong class="text-hp-gold">The Sorting Hat</strong>.</p>
+                    <p class="font-bold text-white italic">"The Hat looks inside your mind and predicts your future to decide your House."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 6: Lexicon 1 -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Active Vocabulary</h2>
+                <h1 class="magic-title text-4xl md:text-5xl uppercase mb-6 font-black text-white">The Spellbook I</h1>
+                <p class="text-lg text-gray-400 mb-8 font-medium">Click a word, then click its definition.</p>
+
+                <div class="flex flex-col md:flex-row gap-6 w-full max-w-4xl mx-auto">
+                    <!-- Words -->
+                    <div class="flex-1 space-y-3" id="lex-words-1">
+                        <button class="match-btn word-btn-1" data-match="1" onclick="handleMatch(this, 'word', 1)">Sort</button>
+                        <button class="match-btn word-btn-1" data-match="2" onclick="handleMatch(this, 'word', 1)">Greatness</button>
+                        <button class="match-btn word-btn-1" data-match="3" onclick="handleMatch(this, 'word', 1)">Courage</button>
+                    </div>
+                    <!-- Definitions -->
+                    <div class="flex-1 space-y-3" id="lex-defs-1">
+                        <button class="match-btn def-btn-1 text-sm" data-match="3" onclick="handleMatch(this, 'def', 1)">The ability to do something that scares you. Being brave.</button>
+                        <button class="match-btn def-btn-1 text-sm" data-match="1" onclick="handleMatch(this, 'def', 1)">To put things into different groups or categories.</button>
+                        <button class="match-btn def-btn-1 text-sm" data-match="2" onclick="handleMatch(this, 'def', 1)">The quality of being very good, powerful, or important.</button>
+                    </div>
+                </div>
+                <div id="followup-1" class="hidden followup-box mt-8">
+                    <p class="font-bold text-hp-gold text-xs uppercase tracking-widest mb-1">🗣️ Follow-up:</p>
+                    <p class="text-lg text-white">Do you think everyone has the potential for <strong class="text-hp-gold">greatness</strong>?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 7: Lexicon 2 -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Active Vocabulary</h2>
+                <h1 class="magic-title text-4xl md:text-5xl uppercase mb-6 font-black text-white">The Spellbook II</h1>
+                <p class="text-lg text-gray-400 mb-8 font-medium">Match the words.</p>
+
+                <div class="flex flex-col md:flex-row gap-6 w-full max-w-4xl mx-auto">
+                    <!-- Words -->
+                    <div class="flex-1 space-y-3" id="lex-words-2">
+                        <button class="match-btn word-btn-2" data-match="1" onclick="handleMatch(this, 'word', 2)">Wicked</button>
+                        <button class="match-btn word-btn-2" data-match="2" onclick="handleMatch(this, 'word', 2)">Doubt</button>
+                        <button class="match-btn word-btn-2" data-match="3" onclick="handleMatch(this, 'word', 2)">Choice</button>
+                    </div>
+                    <!-- Definitions -->
+                    <div class="flex-1 space-y-3" id="lex-defs-2">
+                        <button class="match-btn def-btn-2 text-sm" data-match="2" onclick="handleMatch(this, 'def', 2)">A feeling of not being sure about something.</button>
+                        <button class="match-btn def-btn-2 text-sm" data-match="3" onclick="handleMatch(this, 'def', 2)">Deciding between two or more options.</button>
+                        <button class="match-btn def-btn-2 text-sm" data-match="1" onclick="handleMatch(this, 'def', 2)">Evil, bad, or morally wrong.</button>
+                    </div>
+                </div>
+                <div id="followup-2" class="hidden followup-box mt-8 border-l-hp-red">
+                    <p class="font-bold text-hp-red text-xs uppercase tracking-widest mb-1">🗣️ Follow-up:</p>
+                    <p class="text-lg text-white">Have you ever had a big <strong class="text-hp-red">doubt</strong> before making a choice?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 8: Grammar Will -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Grammar Focus</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">The Future (Will)</h1>
+                
+                <div class="bg-black/40 p-8 rounded-lg border-l-4 border-hp-gold text-lg text-gray-200">
+                    <p class="mb-6 font-bold text-xl">The Sorting Hat is magical. It looks at a student and makes a PREDICTION about their future.</p>
+                    <p class="mb-4">To predict the future, or to make a decision now, we use <strong class="text-hp-gold text-2xl">WILL + Verb</strong>.</p>
+                    <ul class="list-disc pl-6 space-y-3 font-medium bg-black/40 p-4 rounded mt-4">
+                        <li>"You <strong class="text-hp-gold">will be</strong> a great wizard." (Prediction)</li>
+                        <li>"Slytherin House <strong class="text-hp-gold">will help</strong> you." (Prediction)</li>
+                        <li>"I <strong class="text-hp-gold">will put</strong> you in Gryffindor." (Decision)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 9: Grammar Won't -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Grammar Focus</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">The Future (Won't)</h1>
+                
+                <div class="bg-black/40 p-8 rounded-lg border-l-4 border-hp-red text-lg text-gray-200">
+                    <p class="mb-6 font-bold text-xl">To say negative things about the future, we use <strong class="text-hp-red text-2xl">WILL NOT</strong> or <strong class="text-hp-red text-2xl">WON'T</strong>.</p>
+                    <ul class="list-disc pl-6 space-y-3 font-medium bg-black/40 p-4 rounded mt-4">
+                        <li>"I <strong class="text-hp-red">won't go</strong> to Slytherin!"</li>
+                        <li>"You <strong class="text-hp-red">won't regret</strong> this choice."</li>
+                    </ul>
+                </div>
+                <div class="speaking-hub text-left mx-auto max-w-2xl mt-8 p-4">
+                    <p class="font-bold text-hp-gold text-xs mb-1 tracking-widest uppercase">🗣️ Prompt:</p>
+                    <p class="italic text-lg text-gray-300">Name one thing you <strong class="text-white">will do</strong> this weekend, and one thing you <strong class="text-white">won't do</strong>.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 10: The Crystal Ball (Minigame) -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Interactive Challenge</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-6 font-black text-white">The Crystal Ball</h1>
+                <p class="text-xl text-gray-400 mb-8">Look into the future. Choose the correct form to complete the prediction. Click to reveal.</p>
+
+                <div class="flex flex-col gap-6 max-w-2xl mx-auto w-full">
+                    <div class="bg-black/60 p-6 rounded-lg border border-gray-700 interactive-card text-left" onclick="this.classList.toggle('open')">
+                        <p class="text-lg text-gray-200 mb-2">1. Harry is very brave. He <span class="border-b-2 border-gray-500 px-4 text-transparent">___</span> a great hero.</p>
+                        <p class="text-sm text-gray-500">(be / will be)</p>
+                        <div class="reveal-content text-hp-gold font-bold text-xl mt-3 pt-3">> will be</div>
+                    </div>
+                    <div class="bg-black/60 p-6 rounded-lg border border-gray-700 interactive-card text-left" onclick="this.classList.toggle('open')">
+                        <p class="text-lg text-gray-200 mb-2">2. He hates the dark arts. He <span class="border-b-2 border-gray-500 px-4 text-transparent">___</span> bad magic.</p>
+                        <p class="text-sm text-gray-500">(won't learn / doesn't learn)</p>
+                        <div class="reveal-content text-hp-red font-bold text-xl mt-3 pt-3">> won't learn</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 11: Syntax Builder -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Sentence Builder</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-6 font-black text-white">The Prediction</h1>
+                <p class="text-xl text-gray-400 mb-8">Unscramble the Hat's prediction.</p>
+
+                <div id="dropzone-1" class="sb-dropzone mb-8" ondragover="event.preventDefault()"></div>
+                
+                <div id="wordbank-1" class="flex flex-wrap justify-center gap-4 mb-8">
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">greatness</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">will</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">help</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">Slytherin</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">you</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">find</div>
+                </div>
+
+                <button onclick="checkSentenceBuilder('dropzone-1', ['Slytherin', 'will', 'help', 'you', 'find', 'greatness'])" class="btn-magic w-full">Cast Spell</button>
+                <p id="sb-feedback-1" class="text-center mt-6 hidden font-bold text-2xl"></p>
+            </div>
+        </section>
+
+        <!-- STEP 12: Deep Discussion -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Deep Discussion</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">Choices</h1>
+                
+                <div class="bg-black/50 p-10 rounded-xl border-t-4 border-hp-gold shadow-2xl">
+                    <h3 class="text-2xl md:text-3xl font-magic text-hp-gold mb-6 italic leading-relaxed">"It is our choices that show what we truly are, far more than our abilities."</h3>
+                    <p class="text-lg text-gray-300 font-bold mb-8">- Albus Dumbledore</p>
+                    
+                    <div class="text-left bg-black/40 p-6 rounded border border-gray-700">
+                        <p class="font-bold text-white text-lg mb-2">Do you agree with this quote?</p>
+                        <p class="text-gray-400">If someone is born with great talent (abilities) but chooses to do nothing, are they a great person?</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 13: Transition Prep -->
+        <section class="step-container flex-col text-center">
+            <div class="glass-panel">
+                <span class="text-7xl mb-6 block drop-shadow-md">🎩</span>
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold animate-pulse">The Ceremony Begins</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-6 font-black text-white">Put on the Hat</h1>
+                <p class="text-xl text-gray-300 mb-10 leading-relaxed max-w-2xl mx-auto">
+                    Harry is sitting on the chair. The entire school is watching. The magical hat is placed on his head, and it begins to speak.
+                </p>
+                <button onclick="triggerHatEvent()" class="btn-magic text-2xl px-12 py-6" id="hat-btn">Wear The Hat</button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- THEME SHIFTS TO MAGIC MODE HERE            -->
+        <!-- ========================================== -->
+
+        <!-- STEP 14: The Video -->
+        <section class="step-container flex-col">
+            <div class="glass-panel flex flex-col items-center w-full h-full p-6 md:p-10">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">The Great Hall</h2>
+                <h1 class="magic-title text-3xl md:text-5xl uppercase mb-6 font-black text-white text-center">The Sorting</h1>
+                
+                <div class="w-full max-w-5xl aspect-video rounded-xl overflow-hidden border-2 border-hp-gold shadow-[0_0_40px_rgba(212,175,55,0.3)] bg-black relative">
+                    <iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/z4K2F_OALPQ?start=11&rel=0" frameborder="0" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 15: Comprehension Check -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Observation</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-10 font-black text-white">Comprehension</h1>
+                
+                <div class="space-y-4 max-w-3xl mx-auto w-full">
+                    <div class="bg-black/50 p-6 interactive-card text-left border border-gray-700 rounded-lg" onclick="this.classList.toggle('open')">
+                        <p class="font-bold text-xl text-white">Q: Which house did the Hat want to put Harry in?</p>
+                        <div class="reveal-content text-hp-green font-bold text-lg mt-4 pt-4 border-t border-gray-700">
+                            > Slytherin. The Hat said it would help him achieve greatness.
+                        </div>
+                    </div>
+                    <div class="bg-black/50 p-6 interactive-card text-left border border-gray-700 rounded-lg" onclick="this.classList.toggle('open')">
+                        <p class="font-bold text-xl text-white">Q: What was Harry repeating during the scene?</p>
+                        <div class="reveal-content text-hp-red font-bold text-lg mt-4 pt-4 border-t border-gray-700">
+                            > "Not Slytherin, not Slytherin."
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 16: Script Analysis -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold text-center">Data Decryption</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white text-center">The Hat's Words</h1>
+                <p class="text-sm text-gray-400 mb-8 uppercase tracking-widest text-center">Click highlighted words for magic definitions.</p>
+
+                <div class="bg-black/60 p-8 md:p-12 rounded-xl border border-gray-700 text-left font-medium text-xl leading-loose text-gray-300 max-w-4xl mx-auto shadow-inner">
+                    <strong class="text-hp-gold">HAT:</strong> "Hmm. Difficult. Very difficult. Plenty of <span class="vocab-trigger" onclick="openDictionary('Courage', 'Being brave in scary situations.', 'Gryffindors have courage.', 'When was the last time you needed courage?')">courage</span>, I see. Not a bad mind either. There's talent, oh yes. And a nice thirst to prove yourself... But where to put you?"<br><br>
+                    <strong class="text-white">HARRY:</strong> "Not Slytherin. Not Slytherin."<br><br>
+                    <strong class="text-hp-gold">HAT:</strong> "Not Slytherin, eh? Are you sure? You could be great, you know, it's all here in your head. And Slytherin <strong class="text-hp-green font-bold">will help</strong> you on the way to <span class="vocab-trigger" onclick="openDictionary('Greatness', 'Being very successful and important.', 'He achieved greatness.', 'Does greatness mean being famous?')">greatness</span>, no <span class="vocab-trigger" onclick="openDictionary('Doubt', 'Uncertainty. Not being sure.', 'I have no doubt you will win.', 'Do you doubt yourself sometimes?')">doubt</span> about that! No? Well, if you're sure... better be... GRYFFINDOR!"
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 17: Deep Discussion - Hidden Talents -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Deep Discussion</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">Hidden Talents</h1>
+                
+                <div class="bg-black/50 p-10 rounded-xl border-t-4 border-hp-gold shadow-2xl max-w-4xl mx-auto w-full">
+                    <span class="text-6xl mb-6 block drop-shadow-md">✨</span>
+                    <p class="text-xl font-bold mb-8 leading-relaxed text-white">
+                        The Sorting Hat can see things inside your head that even you don't know.<br>What is a "hidden talent" or a strong characteristic you have, but people usually don't see?
+                    </p>
+                    
+                    <div class="text-left bg-black/40 p-6 rounded border border-gray-700">
+                        <p class="font-bold text-hp-gold text-sm mb-2 tracking-widest uppercase">🗣️ Prompt:</p>
+                        <p class="italic text-lg text-gray-300">"People don't know this, but I think I am very..."</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 18: Deep Discussion - Knowing the Future -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Deep Discussion</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">The Future</h1>
+                
+                <div class="bg-black/50 p-10 rounded-xl border-t-4 border-hp-blue shadow-2xl max-w-4xl mx-auto w-full">
+                    <span class="text-6xl mb-6 block drop-shadow-md">🔮</span>
+                    <p class="text-xl font-bold mb-8 leading-relaxed text-white">
+                        If a magical object could tell you exactly what your future will be like in 10 years, would you want to know?<br>Or is it better to leave it as a surprise?
+                    </p>
+                    
+                    <div class="text-left bg-black/40 p-6 rounded border border-gray-700">
+                        <p class="font-bold text-hp-blue text-sm mb-2 tracking-widest uppercase">🗣️ Prompt:</p>
+                        <p class="italic text-lg text-gray-300">"I definitely [ would / wouldn't ] want to know because..."</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- ACT IV: THE HOGWARTS QUIZ                  -->
+        <!-- ========================================== -->
+
+        <!-- STEP 19: The 4 Houses -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">The Assessment</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">The Four Houses</h1>
+                
+                <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                    Now it is your turn. The Sorting Hat will ask you 3 questions to decide your destiny. Answer honestly.
+                </p>
+
+                <div class="grid grid-cols-2 gap-4 max-w-3xl mx-auto w-full text-left">
+                    <div class="bg-black/60 p-6 rounded-lg border-l-4 border-[#740001]">
+                        <p class="font-bold text-white text-xl mb-1">Gryffindor</p>
+                        <p class="text-sm text-gray-400 uppercase tracking-widest">Courage & Bravery</p>
+                    </div>
+                    <div class="bg-black/60 p-6 rounded-lg border-l-4 border-[#1a472a]">
+                        <p class="font-bold text-white text-xl mb-1">Slytherin</p>
+                        <p class="text-sm text-gray-400 uppercase tracking-widest">Ambition & Cunning</p>
+                    </div>
+                    <div class="bg-black/60 p-6 rounded-lg border-l-4 border-[#002555]">
+                        <p class="font-bold text-white text-xl mb-1">Ravenclaw</p>
+                        <p class="text-sm text-gray-400 uppercase tracking-widest">Wisdom & Intellect</p>
+                    </div>
+                    <div class="bg-black/60 p-6 rounded-lg border-l-4 border-[#eebb00]">
+                        <p class="font-bold text-white text-xl mb-1">Hufflepuff</p>
+                        <p class="text-sm text-gray-400 uppercase tracking-widest">Loyalty & Kindness</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 20: Quiz Q1 -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Question 1 / 3</h2>
+                <h1 class="magic-title text-3xl md:text-4xl uppercase mb-8 font-black text-white">The Danger</h1>
+                
+                <p class="text-xl text-gray-300 mb-8">You see a monster attacking a person. What will you do?</p>
+                
+                <div class="flex flex-col gap-4 max-w-2xl mx-auto w-full text-left">
+                    <button class="quiz-opt" onclick="answerQuiz('gryffindor')">A) I will attack the monster immediately to save the person.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('ravenclaw')">B) I will think of a smart plan to defeat the monster.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('hufflepuff')">C) I will run to get help and call the police.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('slytherin')">D) I will hide and survive. I won't risk my life for nothing.</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 21: Quiz Q2 -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Question 2 / 3</h2>
+                <h1 class="magic-title text-3xl md:text-4xl uppercase mb-8 font-black text-white">The Weekend</h1>
+                
+                <p class="text-xl text-gray-300 mb-8">What will you do this weekend?</p>
+                
+                <div class="flex flex-col gap-4 max-w-2xl mx-auto w-full text-left">
+                    <button class="quiz-opt" onclick="answerQuiz('hufflepuff')">A) I will relax at home with my family and pets.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('slytherin')">B) I will work on my personal goals to be successful.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('gryffindor')">C) I will go on an adventure or play a sport.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('ravenclaw')">D) I will study something new or watch a documentary.</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 22: Quiz Q3 -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Question 3 / 3</h2>
+                <h1 class="magic-title text-3xl md:text-4xl uppercase mb-8 font-black text-white">The Treasure</h1>
+                
+                <p class="text-xl text-gray-300 mb-8">You found a magic potion. What will it give you?</p>
+                
+                <div class="flex flex-col gap-4 max-w-2xl mx-auto w-full text-left">
+                    <button class="quiz-opt" onclick="answerQuiz('ravenclaw')">A) Infinite wisdom and intelligence.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('gryffindor')">B) The courage to face my biggest fears.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('slytherin')">C) Power and respect from everyone.</button>
+                    <button class="quiz-opt" onclick="answerQuiz('hufflepuff')">D) Happiness and health for the people I love.</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 23: Quiz Result -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center flex flex-col items-center" id="quiz-result-panel">
+                <h2 class="font-bold tracking-widest mb-4 uppercase text-sm text-hp-gold">The Hat Has Decided</h2>
+                <h1 class="magic-title text-6xl md:text-8xl uppercase mb-6 font-black text-white" id="house-name">HOUSE</h1>
+                <p class="text-2xl text-gray-200 mb-10" id="house-desc">Your future is clear.</p>
+                <div class="w-32 h-32 rounded-full mb-8 flex items-center justify-center text-6xl" id="house-icon-bg">
+                    <span id="house-emoji">🔮</span>
+                </div>
+                <button onclick="nextStep()" class="btn-magic">Continue</button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- ACT V: CONVERSATION                        -->
+        <!-- ========================================== -->
+
+        <!-- STEP 24: Speaking Roulette -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Final Challenge</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-8 font-black text-white">The Future Roulette</h1>
+                <p class="text-xl text-gray-300 mb-10">Spin the wheel and answer the question about your future using "Will" or "Won't".</p>
+
+                <div class="bg-black/60 border border-hp-gold rounded-xl p-8 mb-8 min-h-[160px] flex items-center justify-center">
+                    <p id="roulette-display" class="text-2xl md:text-3xl font-bold text-gray-500 italic transition-colors leading-relaxed">Press SPIN to draw a question...</p>
+                </div>
+
+                <button id="roulette-btn" onclick="spinRoulette()" class="btn-magic px-12 py-5 text-xl w-full max-w-md mx-auto">
+                    SPIN
+                </button>
+                <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mt-6" id="roulette-counter">6 Questions Left</p>
+            </div>
+        </section>
+
+        <!-- STEP 25: Post-Class Assignment -->
+        <section class="step-container flex-col">
+            <div class="glass-panel">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold text-center">Post-Class Assignment</h2>
+                <h1 class="magic-title text-4xl md:text-6xl uppercase mb-10 font-black text-white text-center">Owl Post</h1>
+                
+                <div class="bg-black/50 p-10 rounded-xl border border-gray-700 relative max-w-3xl mx-auto w-full">
+                    <div class="absolute -top-4 -right-4 bg-hp-gold text-black font-black uppercase tracking-widest px-6 py-2 text-sm font-magic shadow-lg transform rotate-6">HOMEWORK</div>
+                    <h3 class="text-2xl font-bold mb-6 uppercase border-b border-gray-700 pb-3 tracking-widest text-white">The Prediction Letter</h3>
+                    <p class="text-lg leading-relaxed font-medium mb-6 text-gray-300">
+                        "Write a 150-word letter to yourself in the future (10 years from now)."
+                    </p>
+                    <ul class="list-disc pl-6 text-base font-bold space-y-3 text-gray-400">
+                        <li>Make 3 predictions using <strong class="text-hp-gold">Will</strong> (What will you be doing?).</li>
+                        <li>Make 2 promises using <strong class="text-hp-red">Won't</strong> (What won't you do anymore?).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 26: Rating -->
+        <section class="step-container flex-col">
+            <div class="glass-panel text-center flex flex-col items-center">
+                <h2 class="font-bold tracking-widest mb-2 uppercase text-sm text-hp-gold">Session Complete</h2>
+                <h1 class="magic-title text-5xl md:text-7xl uppercase mb-8 font-black text-white">Mischief Managed</h1>
+                
+                <p class="mb-6 text-xl font-bold text-gray-300 uppercase tracking-widest">Rate the magic of this class:</p>
+                <div class="flex justify-center gap-3 md:gap-6 mb-8">
+                    <button onclick="rate(1)" class="wand-rating text-5xl grayscale opacity-30 hover:scale-110 transition-transform filter drop-shadow-md">🪄</button>
+                    <button onclick="rate(2)" class="wand-rating text-5xl grayscale opacity-30 hover:scale-110 transition-transform filter drop-shadow-md">🪄</button>
+                    <button onclick="rate(3)" class="wand-rating text-5xl grayscale opacity-30 hover:scale-110 transition-transform filter drop-shadow-md">🪄</button>
+                    <button onclick="rate(4)" class="wand-rating text-5xl grayscale opacity-30 hover:scale-110 transition-transform filter drop-shadow-md">🪄</button>
+                    <button onclick="rate(5)" class="wand-rating text-5xl grayscale opacity-30 hover:scale-110 transition-transform filter drop-shadow-md">🪄</button>
+                </div>
+                <div id="rat-hub" class="hidden p-3 bg-black/80 rounded font-bold text-lg text-center uppercase tracking-widest text-hp-gold border border-hp-gold">> RATED <span id="star-c" class="text-white mx-2 font-black text-3xl"></span> WANDS.</div>
+
+                <button onclick="window.location.reload();" class="btn-magic px-10 py-4 mt-12">
+                    Obliviate (Restart)
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Fixed Bottom Footer -->
+    <footer class="h-20 bg-[#0a0a0a]/95 border-t border-gray-800 flex justify-between items-center px-6 md:px-10 shrink-0 relative z-20">
+        <button id="btn-prev" onclick="prevStep()" class="px-6 py-2 border border-gray-600 text-white hover:border-hp-gold hover:text-hp-gold transition-all rounded uppercase font-bold text-sm tracking-widest disabled:opacity-20 flex items-center gap-2 bg-white/5">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i> Back
+        </button>
+        
+        <div class="text-sm text-gray-500 font-bold tracking-widest uppercase hidden sm:block">
+            Page <span id="current-step-display" class="text-hp-gold text-lg mx-1">1</span> / 26
+        </div>
+
+        <button id="btn-next" onclick="nextStep()" class="px-6 py-2 bg-hp-gold text-black hover:bg-yellow-500 transition-all rounded uppercase font-bold text-sm tracking-widest disabled:opacity-20 flex items-center gap-2 shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+            Next <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+    </footer>
+
+    <!-- Overlays & Panels -->
+    <div id="overlay" class="fixed top-0 left-0 w-full h-full bg-black/80 z-40 hidden opacity-0 transition-opacity duration-300" onclick="closePanels()"></div>
+
+    <div id="dict-panel" class="fixed top-0 right-[-100%] w-full max-w-md h-full bg-[#111] border-l-2 border-hp-gold z-50 flex flex-col shadow-[-20px_0_50px_rgba(0,0,0,0.9)] transition-all duration-500">
+        <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-black">
+            <h3 class="font-bold text-xl text-hp-gold uppercase tracking-widest font-magic">Spellbook</h3>
+            <button onclick="closePanels()" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-8 h-8"></i></button>
+        </div>
+        <div class="p-8 space-y-8 overflow-y-auto">
+            <div>
+                <p id="dict-word" class="magic-title text-4xl text-white mb-4 tracking-widest">Word</p>
+                <p id="dict-def" class="text-gray-300 text-xl leading-relaxed">Definition.</p>
+            </div>
+            <div class="bg-white/5 p-6 rounded-lg border-l-4 border-gray-600">
+                <p class="text-xs text-gray-500 uppercase tracking-widest mb-2 font-bold">Example</p>
+                <p id="dict-ex" class="text-gray-200 italic text-lg">"Example text."</p>
+            </div>
+            <div class="bg-[#d4af37]/10 p-6 rounded-lg border border-[#d4af37]/30">
+                <p class="font-bold text-hp-gold text-xs mb-2 tracking-widest uppercase">🗣️ Prompt:</p>
+                <p id="dict-prompt" class="text-white text-lg font-bold">Prompt text.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE-OUT NOTEPAD -->
+    <aside id="whiteboard-panel" class="fixed top-0 right-[-100%] w-full max-w-md h-full bg-[#111]/95 backdrop-blur-2xl border-l-2 border-hp-gold z-50 flex flex-col shadow-[-10px_0_50px_rgba(0,0,0,0.9)] transition-all duration-500 font-inter">
+        <div class="p-6 border-b border-gray-800 bg-black/50 flex justify-between items-center">
+            <h2 class="font-bold text-hp-gold uppercase tracking-widest text-lg flex items-center gap-2 font-magic">
+                <i data-lucide="scroll" class="w-6 h-6"></i> Magic Parchment
+            </h2>
+            <button onclick="closePanels()" class="text-gray-500 hover:text-hp-gold font-black text-2xl px-2 transition-colors">✕</button>
+        </div>
+        <div class="flex gap-2 p-4 bg-black/80 border-b border-gray-800 shadow-md">
+            <button onclick="addNoteTimestamp()" class="flex-1 flex items-center justify-center gap-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 py-2 rounded transition-colors font-bold" title="Insert Scene Tag">
+                <i data-lucide="tag" class="w-4 h-4"></i> Tag
+            </button>
+            <div class="w-px bg-gray-700 my-1"></div>
+            <button onclick="clearWhiteboard()" class="flex-1 flex items-center justify-center gap-2 text-sm text-gray-300 hover:text-hp-red hover:bg-red-900/20 py-2 rounded transition-colors font-bold" title="Clear Notes">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear
+            </button>
+            <div class="w-px bg-gray-700 my-1"></div>
+            <button onclick="downloadNotes()" class="flex-1 flex items-center justify-center gap-2 text-sm text-black bg-hp-gold hover:bg-yellow-500 py-2 rounded transition-colors font-bold tracking-wider" title="Download as TXT">
+                <i data-lucide="download" class="w-4 h-4"></i> Save
+            </button>
+        </div>
+        <textarea id="whiteboard-textarea" class="flex-1 w-full bg-transparent p-6 text-gray-300 text-lg leading-relaxed outline-none resize-none placeholder:text-gray-700 font-medium" placeholder="Write your magical notes here..."></textarea>
+    </aside>
+
+    <!-- JS LOGIC -->
+    <script>
+        lucide.createIcons();
+
+        // --- Navigation Logic ---
+        let currentStep = 0;
+        const steps = document.querySelectorAll('.step-container');
+        const totalSteps = 26;
+        const progressBar = document.getElementById('progress-bar');
+        const stepDisplay = document.getElementById('current-step-display');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+
+        function updateUI() {
+            steps.forEach((step, index) => {
+                if(index === currentStep) step.classList.add('active');
+                else step.classList.remove('active');
+            });
+            
+            if (progressBar) {
+                progressBar.style.width = `${(currentStep / (totalSteps - 1)) * 100}%`;
+            }
+            if (stepDisplay) {
+                stepDisplay.innerText = currentStep + 1;
+            }
+            if (btnPrev) {
+                btnPrev.disabled = currentStep === 0;
+            }
+            if (btnNext) {
+                btnNext.style.display = currentStep === totalSteps - 1 ? 'none' : 'flex';
+            }
+        }
+
+        function nextStep() { if (currentStep < totalSteps - 1) { currentStep++; updateUI(); } }
+        function prevStep() { if (currentStep > 0) { currentStep--; updateUI(); } }
+
+        window.nextStep = nextStep; window.prevStep = prevStep;
+
+        // --- Dictionary & Panels ---
+        const overlay = document.getElementById('overlay');
+        const dictPanel = document.getElementById('dict-panel');
+        const wbPanel = document.getElementById('whiteboard-panel');
+
+        function openDictionary(word, def, ex, prompt) {
+            document.getElementById('dict-word').innerText = word;
+            document.getElementById('dict-def').innerText = def;
+            document.getElementById('dict-ex').innerText = `"${ex}"`;
+            document.getElementById('dict-prompt').innerText = prompt;
+            wbPanel.classList.remove('open');
+            dictPanel.classList.add('open');
+            overlay.style.display = 'block';
+            setTimeout(() => overlay.style.opacity = '1', 10);
+        }
+        function toggleWhiteboard() {
+            dictPanel.classList.remove('open');
+            wbPanel.classList.toggle('open');
+            if(wbPanel.classList.contains('open')) {
+                overlay.style.display = 'block';
+                setTimeout(() => overlay.style.opacity = '1', 10);
+            } else {
+                closePanels();
+            }
+        }
+        function closePanels() {
+            dictPanel.classList.remove('open');
+            wbPanel.classList.remove('open');
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 300);
+        }
+
+        // --- Whiteboard functions ---
+        function addNoteTimestamp() {
+            const textarea = document.getElementById('whiteboard-textarea');
+            const sceneNum = currentStep + 1;
+            textarea.value += `\n[ --- PAGE ${sceneNum} --- ]\n> `;
+            textarea.focus();
+        }
+        function clearWhiteboard() {
+            const textarea = document.getElementById('whiteboard-textarea');
+            if(textarea.value.trim() !== '' && confirm("Delete all notes?")) textarea.value = '';
+        }
+        function downloadNotes() {
+            const text = document.getElementById('whiteboard-textarea').value;
+            if(!text.trim()) return alert("Notes are empty!");
+            const blob = new Blob([text], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = `WOLFLIX_HarryPotter_${new Date().toISOString().split('T')[0]}.txt`;
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.target = '_blank'; anchor.style.display = 'none';
+            document.body.appendChild(anchor); anchor.click(); document.body.removeChild(anchor);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        // --- Praise ---
+        function triggerPraise(main, icon) {
+            const popup = document.getElementById('praise-popup');
+            const textContainer = document.getElementById('praise-text');
+            
+            textContainer.innerHTML = `${main} <span class="ml-2 drop-shadow-md">${icon}</span>`;
+            popup.classList.remove('hidden');
+            
+            popup.classList.remove('praise-anim');
+            void popup.offsetWidth; // trigger reflow
+            popup.classList.add('praise-anim');
+            
+            setTimeout(() => {
+                popup.classList.remove('praise-anim');
+                popup.classList.add('hidden');
+            }, 2000);
+        }
+
+        // --- Match Logic ---
+        let matchState = { 1: { sel: null, c: 0 }, 2: { sel: null, c: 0 } };
+        function handleMatch(btn, type, grp) {
+            if(btn.classList.contains('matched')) return;
+            let s = matchState[grp];
+            if(type === 'word') {
+                document.querySelectorAll(`.word-btn-${grp}`).forEach(b => { if(!b.classList.contains('matched')) b.classList.remove('selected'); });
+                btn.classList.add('selected'); s.sel = btn;
+            } else if (type === 'def' && s.sel) {
+                if(btn.dataset.match === s.sel.dataset.match) {
+                    btn.classList.add('matched'); s.sel.classList.add('matched'); s.sel.classList.remove('selected'); s.sel = null; s.c++;
+                    if(s.c === 3) { document.getElementById(`followup-${grp}`).classList.remove('hidden'); triggerPraise('SPELL LEARNED! ✨', '✨'); }
+                } else {
+                    btn.classList.add('error-shake', 'border-red-500');
+                    setTimeout(() => btn.classList.remove('error-shake', 'border-red-500'), 400);
+                }
+            }
+        }
+
+        // --- Wow Mechanic: Hat ---
+        function triggerHatEvent() {
+            const btn = document.getElementById('hat-btn');
+            if (btn) btn.disabled = true;
+            const hatOverlay = document.getElementById('hat-overlay');
+            hatOverlay.classList.add('hat-active');
+            
+            setTimeout(() => { document.body.classList.add('theme-magic'); }, 1000);
+            setTimeout(() => { nextStep(); hatOverlay.classList.remove('hat-active'); }, 3000);
+        }
+
+        // --- Sentence Builder ---
+        function moveWord(el, dId, wId) {
+            const d = document.getElementById(dId); const w = document.getElementById(wId);
+            d.classList.remove('correct', 'incorrect');
+            if(el.parentElement.id === wId) d.appendChild(el); else w.appendChild(el);
+        }
+        function checkSentenceBuilder(dId, arr) {
+            const d = document.getElementById(dId);
+            const w = Array.from(d.children).map(c => c.innerText);
+            const fb = document.getElementById('sb-feedback-1');
+            fb.classList.remove('hidden');
+            if(w.length !== arr.length) { d.className='sb-dropzone incorrect mb-8'; fb.innerText="Use all words!"; fb.className="text-center mt-6 text-red-500 font-bold text-2xl"; return; }
+            if(w.every((v,i) => v===arr[i])) { d.className='sb-dropzone correct mb-8'; fb.innerText="Perfect!"; fb.className="text-center mt-6 text-green-500 font-bold text-2xl"; triggerPraise('CORRECT! 🪄', '🪄'); } 
+            else { d.className='sb-dropzone incorrect mb-8'; fb.innerText="Try again."; fb.className="text-center mt-6 text-red-500 font-bold text-2xl"; }
+        }
+
+        // --- House Quiz Logic ---
+        let scores = { gryffindor: 0, slytherin: 0, ravenclaw: 0, hufflepuff: 0 };
+        function answerQuiz(house) {
+            scores[house]++;
+            setTimeout(() => nextStep(), 400); // Small delay to feel the click
+            if(currentStep === 21) calculateHouse(); // If answering Q3 (index 21), calculate house
+        }
+        function calculateHouse() {
+            let win = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+            // Default to Gryffindor if tie or 0
+            if(scores[win] === 0) win = 'gryffindor';
+            
+            const n = document.getElementById('house-name');
+            const d = document.getElementById('house-desc');
+            const ibg = document.getElementById('house-icon-bg');
+            const ico = document.getElementById('house-emoji');
+            const pnl = document.getElementById('quiz-result-panel');
+
+            if(win === 'gryffindor') { n.innerText='Gryffindor'; n.style.color='#ffdb00'; d.innerText='You are brave and heroic!'; ibg.style.background='#740001'; ico.innerText='🦁'; pnl.style.borderColor='#740001'; }
+            if(win === 'slytherin') { n.innerText='Slytherin'; n.style.color='#aaaaaa'; d.innerText='You are ambitious and cunning!'; ibg.style.background='#1a472a'; ico.innerText='🐍'; pnl.style.borderColor='#1a472a'; }
+            if(win === 'ravenclaw') { n.innerText='Ravenclaw'; n.style.color='#cd7f32'; d.innerText='You are intelligent and wise!'; ibg.style.background='#002555'; ico.innerText='🦅'; pnl.style.borderColor='#002555'; }
+            if(win === 'hufflepuff') { n.innerText='Hufflepuff'; n.style.color='#000'; d.innerText='You are loyal and kind!'; ibg.style.background='#eebb00'; ico.innerText='🦡'; pnl.style.borderColor='#eebb00'; }
+        }
+
+        // --- Roulette ---
+        let rq = ["What will you do tomorrow?", "Will you travel to another country next year?", "Where will you live in 10 years?", "What will you eat for dinner tonight?", "Will you learn a new language soon?", "What movie will you watch next?"];
+        function spinRoulette() {
+            const d = document.getElementById('roulette-display'); const b = document.getElementById('roulette-btn'); const c = document.getElementById('roulette-counter');
+            if(rq.length===0) { d.innerText="All questions answered!"; d.classList.remove('text-gray-500'); d.classList.add('text-hp-gold'); b.disabled=true; return; }
+            b.disabled=true; d.classList.add('text-gray-500'); d.classList.remove('text-white');
+            let t=0; const iv = setInterval(() => {
+                d.innerText = rq[Math.floor(Math.random()*rq.length)]; t++;
+                if(t>15) {
+                    clearInterval(iv);
+                    const i = Math.floor(Math.random()*rq.length); d.innerText = rq[i]; rq.splice(i,1);
+                    d.classList.add('text-white'); d.classList.remove('text-gray-500');
+                    c.innerText = `${rq.length} Questions Left`; b.disabled=false;
+                }
+            }, 60);
+        }
+
+        function rate(n) {
+            document.querySelectorAll('.wand-rating').forEach((d, i) => {
+                d.classList.toggle('grayscale', i >= n); d.classList.toggle('opacity-30', i >= n);
+            });
+            document.getElementById('rat-hub').classList.remove('hidden'); document.getElementById('star-c').innerText = n;
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
